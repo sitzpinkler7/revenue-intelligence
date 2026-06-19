@@ -1,12 +1,12 @@
-import google.generativeai as genai
+from google import genai
+
+
+_client = None
 
 
 def configure_gemini(api_key):
-    genai.configure(api_key=api_key)
-
-
-def get_model():
-    return genai.GenerativeModel("gemini-2.0-flash")
+    global _client
+    _client = genai.Client(api_key=api_key)
 
 
 def build_data_context(df, billing, kpis, efficiency, historical):
@@ -86,27 +86,28 @@ INSTRUCTIONS:
 
 
 def chat_with_analyst(data_context, user_question, chat_history=None):
-    model = get_model()
+    contents = []
 
-    history = []
     if chat_history:
         for msg in chat_history:
-            history.append({"role": msg["role"], "parts": [msg["content"]]})
+            role = "user" if msg["role"] == "user" else "model"
+            contents.append({"role": role, "parts": [{"text": msg["content"]}]})
 
-    chat = model.start_chat(history=history)
-
-    if not history:
+    if not contents:
         prompt = data_context + "\n\nUser question: " + user_question
     else:
         prompt = user_question
 
-    response = chat.send_message(prompt)
+    contents.append({"role": "user", "parts": [{"text": prompt}]})
+
+    response = _client.models.generate_content(
+        model="gemini-2.0-flash",
+        contents=contents,
+    )
     return response.text
 
 
 def generate_executive_brief(data_context):
-    model = get_model()
-
     prompt = data_context + """
 
 Generate a professional Executive Revenue Brief for the County Government of Uasin Gishu.
@@ -138,5 +139,8 @@ Format the brief professionally. Use specific numbers from the data.
 Keep it under 800 words. Use KES with thousand separators and no decimal places for all figures.
 """
 
-    response = model.generate_content(prompt)
+    response = _client.models.generate_content(
+        model="gemini-2.0-flash",
+        contents=prompt,
+    )
     return response.text
