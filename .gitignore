@@ -1,0 +1,7 @@
+venv/
+__pycache__/
+*.pyc
+.streamlit/secrets.toml
+database/*.db
+data/reports/.~lock.*
+.DS_Store
