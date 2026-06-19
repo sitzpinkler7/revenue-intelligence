@@ -31,6 +31,7 @@ from analytics import (
     filter_by_fy,
 )
 from config import SUBCOUNTY_TARGETS, REPORTS_FOLDER
+from ai_analyst import configure_gemini, build_data_context, chat_with_analyst, generate_executive_brief
 
 
 # --------------------------------------------------
@@ -439,11 +440,12 @@ avg_fee = billing["paid"] / permit_count if permit_count > 0 else 0
 # TABS
 # --------------------------------------------------
 
-tab1, tab2, tab3, tab4 = st.tabs([
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "Executive Dashboard",
     "Subcounty Operations",
     "Revenue Intelligence",
     "Collections & Compliance",
+    "AI Analyst",
 ])
 
 
@@ -961,3 +963,115 @@ with tab4:
         )
     else:
         st.info("No unpaid bills found for the selected filters.")
+
+
+# ==================================================
+# TAB 5: AI ANALYST
+# ==================================================
+
+with tab5:
+
+    gemini_key = st.secrets.get("GEMINI_API_KEY", "")
+
+    if not gemini_key:
+        st.warning("Gemini API key not configured. Add GEMINI_API_KEY to .streamlit/secrets.toml")
+        st.markdown("""
+            **How to get a free API key:**
+            1. Go to [Google AI Studio](https://aistudio.google.com/apikey)
+            2. Click "Create API Key"
+            3. Add it to your `.streamlit/secrets.toml` file as: `GEMINI_API_KEY = "your-key-here"`
+        """)
+        st.stop()
+
+    configure_gemini(gemini_key)
+
+    data_context = build_data_context(df_filtered, billing, kpis, efficiency, historical)
+
+    ai_col1, ai_col2 = st.columns([3, 2])
+
+    # -- Chat Analyst --
+    with ai_col1:
+        section_header("Revenue Analyst Chat")
+
+        st.markdown("""
+            <div style="font-size: 0.85rem; color: #6C757D; margin-bottom: 1rem;">
+                Ask questions about revenue performance, subcounty comparisons, collection trends, or any data insight.
+            </div>
+        """, unsafe_allow_html=True)
+
+        if "chat_messages" not in st.session_state:
+            st.session_state.chat_messages = []
+
+        for msg in st.session_state.chat_messages:
+            with st.chat_message(msg["role"]):
+                st.markdown(msg["content"])
+
+        if user_input := st.chat_input("Ask about revenue data...", key="ai_chat"):
+            st.session_state.chat_messages.append({"role": "user", "content": user_input})
+            with st.chat_message("user"):
+                st.markdown(user_input)
+
+            with st.chat_message("assistant"):
+                with st.spinner("Analyzing..."):
+                    try:
+                        history = [
+                            {"role": m["role"], "content": m["content"]}
+                            for m in st.session_state.chat_messages[:-1]
+                        ]
+                        response = chat_with_analyst(data_context, user_input, history if history else None)
+                        st.markdown(response)
+                        st.session_state.chat_messages.append({"role": "model", "content": response})
+                    except Exception as e:
+                        st.error(f"AI Error: {e}")
+
+        if st.session_state.chat_messages:
+            if st.button("Clear Chat", key="clear_chat"):
+                st.session_state.chat_messages = []
+                st.rerun()
+
+    # -- Executive Brief --
+    with ai_col2:
+        section_header("Executive Brief Generator")
+
+        st.markdown("""
+            <div style="font-size: 0.85rem; color: #6C757D; margin-bottom: 1rem;">
+                Generate a professional executive summary of the current revenue position for county leadership.
+            </div>
+        """, unsafe_allow_html=True)
+
+        if st.button("Generate Executive Brief", key="gen_brief", type="primary"):
+            with st.spinner("Generating executive brief..."):
+                try:
+                    brief = generate_executive_brief(data_context)
+                    st.session_state.executive_brief = brief
+                except Exception as e:
+                    st.error(f"AI Error: {e}")
+
+        if "executive_brief" in st.session_state:
+            st.markdown(st.session_state.executive_brief)
+
+            st.download_button(
+                label="Download Brief",
+                data=st.session_state.executive_brief,
+                file_name="executive_revenue_brief.md",
+                mime="text/markdown",
+                key="download_brief",
+            )
+
+        section_header("Quick Insights")
+
+        quick_questions = [
+            "Which subcounty needs the most attention?",
+            "What are the top revenue risks?",
+            "Summarize collection efficiency by subcounty",
+            "What actions would improve revenue collection?",
+        ]
+
+        for q in quick_questions:
+            if st.button(q, key=f"quick_{q[:20]}", use_container_width=True):
+                with st.spinner("Analyzing..."):
+                    try:
+                        response = chat_with_analyst(data_context, q)
+                        st.markdown(response)
+                    except Exception as e:
+                        st.error(f"AI Error: {e}")
