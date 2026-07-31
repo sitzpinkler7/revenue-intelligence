@@ -45,8 +45,17 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Automatically rerun the app periodically so new reports are ingested.
-st_autorefresh(interval=30000, key="auto_refresh")
+# Automatically reload the page every 30 seconds so new reports are ingested.
+st.markdown(
+    """
+    <script>
+    setTimeout(() => {
+        window.location.reload();
+    }, 30000);
+    </script>
+    """,
+    unsafe_allow_html=True,
+)
 
 # --------------------------------------------------
 # CHART THEME
