@@ -1,8 +1,10 @@
+from pathlib import Path
+
 TARGET_REVENUE = 400_000_000
 
-REPORTS_FOLDER = "data/reports/"
-
-DATABASE_PATH = "database/revenue.db"
+BASE_DIR = Path(__file__).resolve().parent
+REPORTS_FOLDER = str(BASE_DIR / "data" / "reports")
+DATABASE_PATH = str(BASE_DIR / "database" / "revenue.db")
 
 EXPECTED_COLUMNS = [
     "Bill Date",
