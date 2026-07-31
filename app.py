@@ -107,6 +107,13 @@ st.markdown("""
         border-color: rgba(255,255,255,0.15);
     }
 
+    /* Hide sidebar collapse toggle so sidebar stays permanently visible */
+    [data-testid="collapsedControl"],
+    button[title="Toggle sidebar"],
+    button[aria-label="Toggle sidebar"] {
+        display: none !important;
+    }
+
     /* Header banner */
     .header-banner {
         background: linear-gradient(135deg, #018e11 0%, #0c8c01 60%, #f7bd00 100%);
@@ -424,9 +431,6 @@ with hdr_left:
     """, unsafe_allow_html=True)
 with hdr_right:
     st.markdown(f"<div class=\"header-badge\" style=\"margin-top:8px; text-align:center;\">{period}</div>", unsafe_allow_html=True)
-    if st.button("Show Sidebar", key="show_sidebar_btn_header"):
-        st.experimental_set_query_params(sidebarCollapsed="false")
-        st.experimental_rerun()
 
 
 # --------------------------------------------------
