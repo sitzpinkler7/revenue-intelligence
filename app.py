@@ -45,6 +45,9 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+# Automatically rerun the app periodically so new reports are ingested.
+st_autorefresh(interval=30000, key="auto_refresh")
+
 # --------------------------------------------------
 # CHART THEME
 # --------------------------------------------------
