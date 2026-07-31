@@ -399,33 +399,34 @@ with st.sidebar:
     elif admin_pass:
         st.error("Incorrect password")
 
-# Small control to allow users to reopen the sidebar if it's hidden
-if st.button("Show Sidebar", key="show_sidebar_btn"):
-    st.experimental_set_query_params(sidebarCollapsed="false")
-    st.experimental_rerun()
-
-    st.markdown("""
-        <div style="position: fixed; bottom: 12px; left: 18px; font-size: 0.6rem; color: rgba(255,255,255,0.18); letter-spacing: 0.5px;" title="Crafted by Ian Sang">
-            crafted by Ian Sang
-        </div>
-    """, unsafe_allow_html=True)
+st.markdown("""
+    <div style="position: fixed; bottom: 12px; left: 18px; font-size: 0.6rem; color: rgba(255,255,255,0.18); letter-spacing: 0.5px;" title="Crafted by Ian Sang">
+        crafted by Ian Sang
+    </div>
+""", unsafe_allow_html=True)
 
 
 # --------------------------------------------------
-# HEADER BANNER
+# HEADER BANNER (with persistent Show Sidebar control)
 # --------------------------------------------------
 
 period = current_reporting_period(df_all)
 
-st.markdown(f"""
-    <div class="header-banner">
-        <div>
-            <h1>Uasin Gishu County Revenue Intelligence</h1>
-            <div class="subtitle">Single Business Permit Revenue Tracking & Analytics</div>
+hdr_left, hdr_right = st.columns([9,1])
+with hdr_left:
+    st.markdown(f"""
+        <div class="header-banner">
+            <div>
+                <h1>Uasin Gishu County Revenue Intelligence</h1>
+                <div class="subtitle">Single Business Permit Revenue Tracking & Analytics</div>
+            </div>
         </div>
-        <div class="header-badge">{period}</div>
-    </div>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
+with hdr_right:
+    st.markdown(f"<div class=\"header-badge\" style=\"margin-top:8px; text-align:center;\">{period}</div>", unsafe_allow_html=True)
+    if st.button("Show Sidebar", key="show_sidebar_btn_header"):
+        st.experimental_set_query_params(sidebarCollapsed="false")
+        st.experimental_rerun()
 
 
 # --------------------------------------------------
