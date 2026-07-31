@@ -1,4 +1,5 @@
 import os
+import time
 import streamlit as st
 import plotly.graph_objects as go
 import pandas as pd
@@ -45,17 +46,14 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Automatically reload the page every 30 seconds so new reports are ingested.
-st.markdown(
-    """
-    <script>
-    setTimeout(() => {
-        window.location.reload();
-    }, 30000);
-    </script>
-    """,
-    unsafe_allow_html=True,
-)
+# Keep the app responsive to new files by rerunning it periodically.
+if "_last_refresh" not in st.session_state:
+    st.session_state["_last_refresh"] = 0
+
+now = time.time()
+if now - st.session_state["_last_refresh"] >= 30:
+    st.session_state["_last_refresh"] = now
+    st.rerun()
 
 # --------------------------------------------------
 # CHART THEME
