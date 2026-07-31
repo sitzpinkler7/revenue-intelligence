@@ -287,12 +287,24 @@ def format_kes(amount):
     return f"KES {amount:,.0f}"
 
 
+def get_reports_cache_key(folder=REPORTS_FOLDER):
+    """Build a simple key based on report filenames and modification times."""
+    file_metadata = []
+    for filename in sorted(os.listdir(folder)):
+        filepath = os.path.join(folder, filename)
+        if not os.path.isfile(filepath) or filename.startswith(".") or filename.startswith("~"):
+            continue
+        stat = os.stat(filepath)
+        file_metadata.append((filename, stat.st_mtime, stat.st_size))
+    return repr(file_metadata)
+
+
 # --------------------------------------------------
 # LOAD DATA
 # --------------------------------------------------
 
 @st.cache_data(ttl=300, show_spinner="Loading revenue data...")
-def load_data():
+def load_data(report_key):
     try:
         return ingest_reports()
     except Exception as e:
@@ -300,7 +312,7 @@ def load_data():
         return pd.DataFrame()
 
 
-df_all = load_data()
+df_all = load_data(get_reports_cache_key())
 
 if df_all.empty:
     st.warning("No revenue reports detected. Place report files in data/reports/")
@@ -362,6 +374,10 @@ with st.sidebar:
             <div><strong style="color: rgba(255,255,255,0.7);">To:</strong> {date_range_end.strftime('%d %b %Y') if pd.notna(date_range_end) else 'N/A'}</div>
         </div>
     """, unsafe_allow_html=True)
+
+    if st.button("Refresh data", key="refresh_data"):
+        st.cache_data.clear()
+        st.experimental_rerun()
 
     st.divider()
 
