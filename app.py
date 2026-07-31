@@ -399,6 +399,11 @@ with st.sidebar:
     elif admin_pass:
         st.error("Incorrect password")
 
+# Small control to allow users to reopen the sidebar if it's hidden
+if st.button("Show Sidebar", key="show_sidebar_btn"):
+    st.experimental_set_query_params(sidebarCollapsed="false")
+    st.experimental_rerun()
+
     st.markdown("""
         <div style="position: fixed; bottom: 12px; left: 18px; font-size: 0.6rem; color: rgba(255,255,255,0.18); letter-spacing: 0.5px;" title="Crafted by Ian Sang">
             crafted by Ian Sang
